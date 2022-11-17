@@ -2,12 +2,14 @@
 declare(strict_types=1);
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\TagRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
+#[ApiResource]
 class Tag implements \JsonSerializable
 {
     use TimestampableEntity;

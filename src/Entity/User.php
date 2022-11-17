@@ -2,6 +2,11 @@
 declare(strict_types=1);
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Enum\RoleEnum;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -9,12 +14,25 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
-
+#[ApiResource(
+    operations: [
+        new Get(),
+        new Post(),
+        new GetCollection()
+    ],
+    normalizationContext: [
+        'groups' => ['read']
+    ]
+)
+]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity(fields: ['userName', 'email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     use TimestampableEntity;
@@ -22,14 +40,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['read'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::STRING, length: 32, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 32)]
+    #[Groups(['read'])]
     private string $userName;
 
     #[ORM\Column(type: Types::STRING, length: 32, unique: true)]
+    #[Assert\NotBlank]
     #[Assert\Email]
     private string $email;
 
@@ -37,7 +58,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     #[ORM\Column]
+    #[Assert\NotBlank]
     private ?string $password;
+
+    #[ORM\Column]
+    #[Assert\NotBlank]
+    #[Assert\Expression(
+        "this.getPassword() == getRepeatPassword()",
+        message: "The password is not the same."
+    )]
+    private string $repeatPassword;
 
     #[ORM\Column]
     private ?string $plainPassword;
@@ -49,6 +79,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private bool $enabled;
 
     #[ORM\OneToMany('commentBy', Comment::class)]
+    #[Groups(['read'])]
     private Collection $comments;
 
     public function __construct()
@@ -109,6 +140,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->password = $password;
         return $this;
     }
+
+    public function getRepeatPassword(): string
+    {
+        return $this->repeatPassword;
+    }
+
+    public function setRepeatPassword(string $repeatPassword): self
+    {
+        $this->repeatPassword = $repeatPassword;
+        return $this;
+    }
+
+
 
     public function getPlainPassword(): ?string
     {
@@ -190,10 +234,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-
     public function __toString(): string
     {
         return $this->email;
     }
-
 }
