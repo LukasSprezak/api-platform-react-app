@@ -1,0 +1,76 @@
+<?php
+declare(strict_types=1);
+namespace App\DataFixtures\Factory;
+
+use App\Entity\User;
+use App\Enum\RoleEnum;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Zenstruck\Foundry\Factory;
+use Zenstruck\Foundry\ModelFactory;
+use function Zenstruck\Foundry\faker;
+
+class UserFactory extends ModelFactory
+{
+    private const MIME_PNG = '.png';
+
+    public function __construct(private readonly UserPasswordHasherInterface $passwordHasher)
+    {
+        parent::__construct();
+    }
+
+    protected static function getClass(): string
+    {
+        return User::class;
+    }
+
+    public function promoteRole(string $role): self
+    {
+        $defaults = $this->getDefaults();
+        $roles = [...$defaults['roles'], ...[$role]];
+
+        return $this->addState([
+            'roles' => $roles
+        ]);
+    }
+
+    protected function getDefaults(): array
+    {
+        return [
+            'email' => self::faker()->email,
+            'userName' => faker()->userName(),
+            'roles' => [
+                RoleEnum::ROLE_USER->name
+            ],
+            'plainPassword' => 'admin',
+            'logo' => 'logo.png',
+            'createdAt' => faker()->dateTimeBetween('-2 year', '-1 year'),
+            'updatedAt' => faker()->dateTimeThisYear,
+            'enabled' => true
+        ];
+    }
+
+    public function initialize(): UserFactory|Factory
+    {
+        return $this
+            ->afterInstantiate(function (User $user) {
+                $passwordHash = $this->passwordHasher
+                    ->hashPassword($user, $user->getPlainPassword())
+                ;
+                $user->setPassword($passwordHash);
+
+                $fileSystem = new Filesystem();
+                $logoFileName = self::faker()->slug(nbWords: 3) . self::MIME_PNG;
+
+                $file = __DIR__ . '/../../../assets/images/' . $user->getLogo();
+                $destination = __DIR__ . '/../../../public/uploads/logo/' . $logoFileName;
+
+                $fileSystem->copy(
+                    $file,
+                    $destination
+                );
+
+                $user->setLogo($logoFileName);
+            });
+    }
+}

@@ -9,9 +9,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[UniqueEntity(fields: ['slug'])]
 class Product
 {
     use TimestampableEntity;
@@ -54,6 +56,10 @@ class Product
 
     #[ORM\Column(type: Types::TEXT)]
     private string $description;
+
+    #[ORM\Column(type: Types::STRING)]
+    #[Assert\NotBlank]
+    private ?string $slug;
 
     public function __construct()
     {
@@ -168,6 +174,17 @@ class Product
     public function setDescription(string $description): self
     {
         $this->description = $description;
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): self
+    {
+        $this->slug = $slug;
         return $this;
     }
 
