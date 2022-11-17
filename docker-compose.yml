@@ -1,21 +1,59 @@
-version: '3'
+version: '3.8'
+
+networks:
+  apache-php81-mysql-rabbit-api:
 
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-14}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+  web:
+    build: ./etc/docker/php_apache
+    tty: true
+    hostname: api-app.loc
+    container_name: api-app.loc
+    working_dir: /var/www
     volumes:
-      - db-data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - .:/var/www
+      - ./etc/docker/php_apache/php.ini:/usr/local/etc/php/php.ini
+    links:
+      - mysql-db
+      - rabbit
+    ports:
+      - "8080:80"
 
-volumes:
-###> doctrine/doctrine-bundle ###
-  db-data:
-###< doctrine/doctrine-bundle ###
+  mysql-db:
+    image: mysql:5.7
+    hostname: api-app-db.loc
+    container_name: api-app-db.loc
+    working_dir: /application
+    volumes:
+      - .:/application
+    command: --init-file /application/etc/docker/mysql/databases.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - 3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    hostname: api-app-pma.loc
+    container_name: api-app-pma.loc
+    volumes:
+      - /sessions
+    environment:
+      PMA_HOST: api-app-db.loc
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
+
+  rabbit:
+    hostname: api-app-rabbitmq.loc
+    container_name: api-app-rabbitmq.loc
+    image: rabbitmq:3.9-management
+    environment:
+      - RABBITMQ_DEFAULT_USR=root
+      - RABBITMQ_DEFAULT_PASS=root
+    expose:
+      - "5672"
+      - "15672"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
