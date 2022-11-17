@@ -20,8 +20,7 @@ class CommentFactory extends ModelFactory
             'content' => self::faker()->sentence,
             'commentBy' => UserFactory::random(),
             'product' => ProductFactory::random(),
-            'createdAt' => faker()->dateTimeBetween('-2 year', '-1 year'),
-            'updatedAt' => faker()->dateTimeThisYear
+            'publishedAt' => faker()->dateTime()
         ];
     }
 }

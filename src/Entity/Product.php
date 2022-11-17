@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Enum\StatusProductEnum;
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -14,6 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[UniqueEntity(fields: ['slug'])]
+#[ApiResource]
 class Product
 {
     use TimestampableEntity;

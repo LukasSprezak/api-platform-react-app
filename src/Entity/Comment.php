@@ -5,14 +5,13 @@ namespace App\Entity;
 use App\Repository\CommentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation\Timestampable;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
 class Comment
 {
-    use TimestampableEntity;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -35,6 +34,15 @@ class Comment
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $commentBy;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Timestampable(on: 'create')]
+    private \DateTime $publishedAt;
+
+    public function __construct()
+    {
+        $this->publishedAt = new \DateTime();
+    }
 
     public function getId(): ?int
     {
@@ -71,6 +79,17 @@ class Comment
     public function setCommentBy(?User $commentBy): self
     {
         $this->commentBy = $commentBy;
+        return $this;
+    }
+
+    public function getPublishedAt(): \DateTime
+    {
+        return $this->publishedAt;
+    }
+
+    public function setPublishedAt(\DateTime $publishedAt): self
+    {
+        $this->publishedAt = $publishedAt;
         return $this;
     }
 
