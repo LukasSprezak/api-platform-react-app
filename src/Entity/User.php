@@ -6,7 +6,6 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\Enum\RoleEnum;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -32,7 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 )
 ]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[UniqueEntity(fields: ['userName', 'email'])]
+#[UniqueEntity(fields: ['username', 'email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     use TimestampableEntity;
@@ -47,7 +46,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 32)]
     #[Groups(['read'])]
-    private string $userName;
+    private string $username;
 
     #[ORM\Column(type: Types::STRING, length: 32, unique: true)]
     #[Assert\NotBlank]
@@ -92,14 +91,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getUserName(): string
+    public function getUsername(): string
     {
-        return $this->userName;
+        return $this->username;
     }
 
-    public function setUserName(string $userName): self
+    public function setUsername(string $username): self
     {
-        $this->userName = $userName;
+        $this->username = $username;
         return $this;
     }
 
@@ -151,7 +150,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->repeatPassword = $repeatPassword;
         return $this;
     }
-
 
 
     public function getPlainPassword(): ?string

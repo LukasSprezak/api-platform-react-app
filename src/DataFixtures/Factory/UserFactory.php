@@ -38,11 +38,12 @@ class UserFactory extends ModelFactory
     {
         return [
             'email' => self::faker()->email,
-            'userName' => faker()->userName(),
+            'username' => faker()->userName(),
             'roles' => [
                 RoleEnum::ROLE_USER->name
             ],
             'plainPassword' => 'admin',
+            'repeatPassword' => 'admin',
             'logo' => 'logo.png',
             'createdAt' => faker()->dateTimeBetween('-2 year', '-1 year'),
             'updatedAt' => faker()->dateTimeThisYear,
