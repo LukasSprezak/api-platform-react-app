@@ -26,7 +26,7 @@ class ProductFactory extends ModelFactory
 
         return  [
             'name' => self::faker()->sentence,
-            'user' => UserFactory::random(),
+            'owner' => UserFactory::random(),
             'createdAt' => faker()->dateTimeBetween('-2 year', '-1 year'),
             'updatedAt' => faker()->dateTimeThisYear,
             'status' => $randomStatus,

@@ -30,7 +30,7 @@ class PasswordHasherSubscriber implements EventSubscriberInterface
         $user = $event->getControllerResult();
         $method = $event->getRequest()->getMethod();
 
-        if (!$user instanceof User || Request::METHOD_POST !== $method) {
+        if (!$user instanceof User || !in_array($method, [Request::METHOD_POST, Request::METHOD_PUT], true)) {
             return;
         }
 
@@ -38,6 +38,13 @@ class PasswordHasherSubscriber implements EventSubscriberInterface
             $this->passwordHasher->hashPassword(
                 $user,
                 $user->getPassword()
+            )
+        );
+
+        $user->setRepeatPassword(
+            $this->passwordHasher->hashPassword(
+                $user,
+                $user->getRepeatPassword()
             )
         );
     }

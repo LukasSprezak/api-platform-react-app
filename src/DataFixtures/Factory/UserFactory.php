@@ -42,7 +42,6 @@ class UserFactory extends ModelFactory
             'roles' => [
                 RoleEnum::ROLE_USER->name
             ],
-            'plainPassword' => 'admin',
             'repeatPassword' => 'admin',
             'logo' => 'logo.png',
             'createdAt' => faker()->dateTimeBetween('-2 year', '-1 year'),
@@ -59,6 +58,7 @@ class UserFactory extends ModelFactory
                     ->hashPassword($user, $user->getPlainPassword())
                 ;
                 $user->setPassword($passwordHash);
+                $user->setRepeatPassword($passwordHash);
 
                 $fileSystem = new Filesystem();
                 $logoFileName = self::faker()->slug(nbWords: 3) . self::MIME_PNG;

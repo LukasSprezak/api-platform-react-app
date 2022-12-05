@@ -6,13 +6,13 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Enum\RoleEnum;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -21,12 +21,27 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
-        new Get(),
-        new Post(),
-        new GetCollection()
-    ],
-    normalizationContext: [
-        'groups' => ['read']
+        new Get(
+            normalizationContext: [
+                'groups' => ['read']
+            ],
+            security: "is_granted('IS_AUTHENTICATED_FULLY')"
+        ),
+        new Put(
+            normalizationContext: [
+                'groups' => ['read']
+            ],
+            denormalizationContext: [
+                'groups' => ['put']
+            ],
+            security: "is_granted('IS_AUTHENTICATED_FULLY') and object == user",
+        ),
+        new GetCollection(),
+        new Post(
+            denormalizationContext: [
+                'groups' => ['post']
+            ],
+        ),
     ]
 )
 ]
@@ -34,7 +49,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['username', 'email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    use TimestampableEntity;
+    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -45,12 +60,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::STRING, length: 32, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 32)]
-    #[Groups(['read'])]
+    #[Groups(['read', 'post'])]
     private string $username;
 
     #[ORM\Column(type: Types::STRING, length: 32, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Email]
+    #[Groups(['post'])]
     private string $email;
 
     #[ORM\Column(type: Types::JSON)]
@@ -58,32 +74,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Assert\NotBlank]
+    #[Groups(['put', 'post'])]
     private ?string $password;
 
     #[ORM\Column]
     #[Assert\NotBlank]
-    #[Assert\Expression(
-        "this.getPassword() == getRepeatPassword()",
-        message: "The password is not the same."
-    )]
+//    #[Assert\Expression(
+//        "this.getPassword() == getRepeatPassword()",
+//        message: "The password is not the same."
+//    )]
+    #[Groups(['put', 'post'])]
     private string $repeatPassword;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?string $plainPassword;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['read', 'put', 'post'])]
     private ?string $logo;
 
     #[ORM\Column(type: Types::BOOLEAN)]
+    #[Groups(['put', 'post'])]
     private bool $enabled;
 
-    #[ORM\OneToMany('commentBy', Comment::class)]
+    #[ORM\OneToMany('owner', Comment::class)]
     #[Groups(['read'])]
     private Collection $comments;
 
     public function __construct()
     {
         $this->comments = new ArrayCollection();
+        $this->setCreatedAt(new \DateTime());
+        $this->setUpdatedAt(new \DateTime());
     }
 
     public function getId(): ?int
@@ -150,7 +172,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->repeatPassword = $repeatPassword;
         return $this;
     }
-
 
     public function getPlainPassword(): ?string
     {
@@ -219,14 +240,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->containsComments($comment)) {
             $this->comments->add($comment);
-            $comment->setCommentBy($this);
+            $comment->setOwner($this);
         }
     }
 
     public function removeComment(Comment $comment): self
     {
-        if ($this->comments->removeElement($comment) && $comment->getCommentBy() === $this) {
-            $comment->setCommentBy(null);
+        if ($this->comments->removeElement($comment) && $comment->getOwner() === $this) {
+            $comment->setOwner(null);
         }
 
         return $this;

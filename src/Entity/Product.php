@@ -5,6 +5,8 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Enum\StatusProductEnum;
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -13,20 +15,27 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
         new Get(),
-        new GetCollection()
+        new Put(
+            security: "is_granted('IS_AUTHENTICATED_FULLY') and object.getUser() == user",
+        ),
+        new GetCollection(),
+        new Post(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+        ),
     ],
 )
 ]
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[UniqueEntity(fields: ['slug'])]
-class Product
+class Product implements OwnerInterface
 {
-    use TimestampableEntity;
+    use TimestampableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -59,7 +68,7 @@ class Product
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $user;
+    private ?User $owner;
 
     #[ORM\Column(type: Types::STRING, length: 20, enumType: StatusProductEnum::class)]
     private StatusProductEnum $status;
@@ -75,6 +84,8 @@ class Product
     {
         $this->comments = new ArrayCollection();
         $this->tags = new ArrayCollection();
+        $this->setCreatedAt(new \DateTime());
+        $this->setUpdatedAt(new \DateTime());
     }
 
     public function getId(): ?int
@@ -154,14 +165,14 @@ class Product
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getOwner(): ?User
     {
-        return $this->user;
+        return $this->owner;
     }
 
-    public function setUser(User $user): self
+    public function setOwner(?UserInterface $owner): OwnerInterface
     {
-        $this->user = $user;
+        $this->owner = $owner;
         return $this;
     }
 

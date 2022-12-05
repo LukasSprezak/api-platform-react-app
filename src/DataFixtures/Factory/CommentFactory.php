@@ -18,7 +18,7 @@ class CommentFactory extends ModelFactory
     {
         return  [
             'content' => self::faker()->sentence,
-            'commentBy' => UserFactory::random(),
+            'owner' => UserFactory::random(),
             'product' => ProductFactory::random(),
             'publishedAt' => faker()->dateTimeThisYear
         ];

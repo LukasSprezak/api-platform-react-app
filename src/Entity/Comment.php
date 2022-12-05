@@ -5,21 +5,30 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\CommentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation\Timestampable;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
         new Get(),
-        new GetCollection()
+        new Put(
+            security: "is_granted('IS_AUTHENTICATED_FULLY') and object.getUser() == user",
+        ),
+        new GetCollection(),
+        new Post(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+        ),
     ],
 )
 ]
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
-class Comment
+class Comment implements OwnerInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -42,7 +51,7 @@ class Comment
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $commentBy;
+    private ?User $owner;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Timestampable(on: 'create')]
@@ -80,14 +89,14 @@ class Comment
         return $this;
     }
 
-    public function getCommentBy(): ?User
+    public function getOwner(): ?User
     {
-        return $this->commentBy;
+        return $this->owner;
     }
 
-    public function setCommentBy(?User $commentBy): self
+    public function setOwner(?UserInterface $owner): OwnerInterface
     {
-        $this->commentBy = $commentBy;
+        $this->owner = $owner;
         return $this;
     }
 
