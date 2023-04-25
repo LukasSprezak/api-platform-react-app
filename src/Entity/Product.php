@@ -5,6 +5,7 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Enum\StatusProductEnum;
@@ -13,9 +14,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -28,6 +29,9 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             security: "is_granted('IS_AUTHENTICATED_FULLY')",
         ),
+    ],
+    denormalizationContext: [
+        'groups' => ['post']
     ],
 )
 ]
@@ -44,6 +48,7 @@ class Product implements OwnerInterface
 
     #[ORM\Column(type: Types::STRING)]
     #[Assert\NotBlank]
+    #[Groups(['post'])]
     private ?string $name = null;
 
     #[ORM\OneToMany(
@@ -71,13 +76,16 @@ class Product implements OwnerInterface
     private ?User $owner;
 
     #[ORM\Column(type: Types::STRING, length: 20, enumType: StatusProductEnum::class)]
+    #[Groups(['post'])]
     private StatusProductEnum $status;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['post'])]
     private string $description;
 
     #[ORM\Column(type: Types::STRING)]
     #[Assert\NotBlank]
+    #[Groups(['post'])]
     private ?string $slug;
 
     public function __construct()

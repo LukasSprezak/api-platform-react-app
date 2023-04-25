@@ -5,6 +5,7 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Repository\CommentRepository;
@@ -12,6 +13,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation\Timestampable;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -24,6 +26,9 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             security: "is_granted('IS_AUTHENTICATED_FULLY')",
         ),
+    ],
+    denormalizationContext: [
+        'groups' => ['post']
     ],
 )
 ]
@@ -47,6 +52,7 @@ class Comment implements OwnerInterface
         minMessage: 'comment.too_short',
         maxMessage: 'comment.too_long'
     )]
+    #[Groups(['post'])]
     private ?string $content;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'comments')]
